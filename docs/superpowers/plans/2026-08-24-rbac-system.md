@@ -1972,7 +1972,7 @@ git commit -m "Scaffold React frontend with Vite, Tailwind, shadcn/ui, and routi
 
 **Interfaces:**
 - Consumes: backend endpoints from Tasks 4/6/7/8 at `http://localhost:3000`.
-- Produces: `apiFetch(path, options)` (auto-attaches access token, retries once via `/auth/refresh` on 401) used by every page from Task 12 onward; `useAuth()` hook (`{ user, login, logout }`); `<ProtectedRoute>` wrapper.
+- Produces: `apiFetch(path, options)` (auto-attaches access token, retries once via `/auth/refresh` on 401) used by every page from Task 12 onward; `useAuth()` hook (`{ isAuthenticated, login, logout }` — corrected post-implementation; no task ever consumes a `.user` field, so the original `{ user, login, logout }` in this line was a planning-time slip, not something the shipped code needs to match); `<ProtectedRoute>` wrapper.
 
 - [ ] **Step 1: Token storage + `apiFetch`**
 
@@ -2875,4 +2875,5 @@ git commit -m "Add full dev stack (Postgres, API, Web) to docker-compose"
 
 ## Post-plan notes
 
-- Spec coverage: auth/JWT (Task 4), users/roles/permissions CRUD (Tasks 6-8, 13-15), multi-role + resource:action permissions (Tasks 3, 5), audit log (Tasks 9, 16), all 6 frontend pages (Tasks 10, 12-16), dev docker-compose (Tasks 1, 17). Everything in the spec's scope is covered; nothing in "Out of scope (v1)" was added.
+- Spec coverage: auth/JWT (Task 4), users/roles/permissions CRUD (Tasks 6-8, 13-15), multi-role + resource:action permissions (Tasks 3, 5), audit log (Tasks 9, 16), dev docker-compose (Tasks 1, 17). Everything in the spec's scope is covered; nothing in "Out of scope (v1)" was added.
+- Correction, added after implementation and final review: this plan never actually gave the Dashboard route (`/`) real content or any task building shared navigation/logout UI — Tasks 12-16 each correctly built only their own page, so no single task's scope covered the app shell that ties them together. The final whole-branch review caught this (the app was unreachable without typing URLs) and it was fixed in that review's fix wave: a minimal `frontend/src/lib/layout.tsx` (nav links + logout button) and a real `DashboardPage.tsx`, both outside this plan's original task list. Recorded here so the plan accurately reflects what shipped, and as a reminder for future plans of this shape: an admin-panel plan with N independent page tasks needs its own explicit "app shell" task, not an assumption that it falls out of the individual pages.
