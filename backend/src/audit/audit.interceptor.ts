@@ -5,8 +5,8 @@ import {
   NestInterceptor,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { from, Observable } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { from, Observable, of } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { PrismaService } from '../prisma/prisma.service';
 import { AUDIT_ACTION_KEY } from './audit.decorator';
 
@@ -38,7 +38,16 @@ export class AuditInterceptor implements NestInterceptor {
           this.prisma.auditLog.create({
             data: { actorUserId, action, targetType, targetId, meta: params },
           }),
-        ).pipe(map(() => result));
+        ).pipe(
+          // The mutation in next.handle() already committed by this point — an audit
+          // write failure (DB blip, dropped connection) must not turn that success
+          // into a 500. Log it and let the original result through anyway.
+          catchError((err) => {
+            console.error('AuditInterceptor: failed to write audit log', err);
+            return of(null);
+          }),
+          map(() => result),
+        );
       }),
     );
   }
