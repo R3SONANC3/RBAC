@@ -3,6 +3,7 @@ import { ProtectedRoute } from './lib/protected-route';
 import { LoginPage } from './pages/LoginPage';
 import { UsersPage } from './pages/UsersPage';
 import { RolesPage } from './pages/RolesPage';
+import { PermissionsPage } from './pages/PermissionsPage';
 
 const Placeholder = ({ name }: { name: string }) => <div className="p-6">{name} page</div>;
 
@@ -14,7 +15,7 @@ export const router = createBrowserRouter([
       { path: '/', element: <Placeholder name="Dashboard" /> },
       { path: '/users', element: <UsersPage /> },
       { path: '/roles', element: <RolesPage /> },
-      { path: '/permissions', element: <Placeholder name="Permissions" /> },
+      { path: '/permissions', element: <PermissionsPage /> },
       { path: '/audit-log', element: <Placeholder name="Audit Log" /> },
     ],
   },
