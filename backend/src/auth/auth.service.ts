@@ -33,6 +33,9 @@ export class AuthService {
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
       throw new UnauthorizedException('Invalid credentials');
     }
+    if (!user.isActive) {
+      throw new UnauthorizedException('Account is deactivated');
+    }
     return this.issueTokenPair(user.id, user.email);
   }
 
@@ -60,6 +63,9 @@ export class AuthService {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: stored.userId },
     });
+    if (!user.isActive) {
+      throw new UnauthorizedException('Account is deactivated');
+    }
     return this.issueTokenPair(user.id, user.email);
   }
 

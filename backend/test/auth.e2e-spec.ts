@@ -85,4 +85,34 @@ describe('Auth (e2e)', () => {
       .send({ refreshToken: 123 });
     expect(res.status).toBe(400);
   });
+
+  it('rejects login and refresh for a deactivated user', async () => {
+    const deactivatedEmail = `deactivated-${Date.now()}@example.com`;
+    await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({ email: deactivatedEmail, password });
+
+    const loginRes = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email: deactivatedEmail, password });
+    expect(loginRes.status).toBe(200);
+    const { refreshToken } = loginRes.body as TokenPair;
+
+    await prisma.user.update({
+      where: { email: deactivatedEmail },
+      data: { isActive: false },
+    });
+
+    const blockedLogin = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email: deactivatedEmail, password });
+    expect(blockedLogin.status).toBe(401);
+
+    const blockedRefresh = await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .send({ refreshToken });
+    expect(blockedRefresh.status).toBe(401);
+
+    await prisma.user.deleteMany({ where: { email: deactivatedEmail } });
+  });
 });
