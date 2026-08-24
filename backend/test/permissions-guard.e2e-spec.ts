@@ -16,6 +16,25 @@ class TestProtectedController {
   ping() {
     return { ok: true };
   }
+
+  @Get('malformed')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @RequirePermission('badformat') // missing "resource:action" colon, on purpose
+  malformed() {
+    return { ok: true };
+  }
+}
+
+// Class-level decoration, matching how Tasks 6-8 apply @RequirePermission
+// to entire controllers rather than per-method.
+@Controller('test-protected-class')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+@RequirePermission('role:manage')
+class TestProtectedClassController {
+  @Get()
+  ping() {
+    return { ok: true };
+  }
 }
 
 describe('PermissionsGuard (e2e)', () => {
@@ -29,7 +48,7 @@ describe('PermissionsGuard (e2e)', () => {
     // throwaway TestProtectedController becomes reachable without touching AppModule.
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
-      controllers: [TestProtectedController],
+      controllers: [TestProtectedController, TestProtectedClassController],
     }).compile();
     app = moduleRef.createNestApplication();
     await app.init();
@@ -74,5 +93,34 @@ describe('PermissionsGuard (e2e)', () => {
   it('returns 401 when there is no valid auth token at all', async () => {
     const res = await request(app.getHttpServer()).get('/test-protected');
     expect(res.status).toBe(401);
+  });
+
+  it('enforces a class-level @RequirePermission, not just method-level', async () => {
+    // Regression test for: reflector only checking context.getHandler() means
+    // class-level metadata is invisible, so `required` comes back undefined
+    // and the guard fail-opens (`if (!required) return true`) for anyone
+    // authenticated. This user has zero roles/permissions, so a 200 here
+    // would mean the class-level decorator was silently ignored.
+    const classEmail = `guard-class-${Date.now()}@example.com`;
+    await auth.register(classEmail, 'SuperSecret123');
+    const { accessToken } = await auth.login(classEmail, 'SuperSecret123');
+
+    const res = await request(app.getHttpServer())
+      .get('/test-protected-class')
+      .set('Authorization', `Bearer ${accessToken}`);
+    expect(res.status).toBe(403);
+
+    await prisma.user.deleteMany({ where: { email: classEmail } });
+  });
+
+  it('rejects a malformed permission string instead of over-granting', async () => {
+    // 'badformat' has no colon, so `required.split(':')` would leave `action`
+    // undefined; Prisma would then treat that as "no filter" and match any
+    // user:* permission. Must fail loudly instead.
+    const { accessToken } = await auth.login(email, 'SuperSecret123');
+    const res = await request(app.getHttpServer())
+      .get('/test-protected/malformed')
+      .set('Authorization', `Bearer ${accessToken}`);
+    expect(res.status).toBe(403);
   });
 });

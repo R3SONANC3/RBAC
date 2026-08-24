@@ -11,7 +11,10 @@ export class PermissionsGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const required = this.reflector.get<string>(PERMISSION_KEY, context.getHandler());
+    const required = this.reflector.getAllAndOverride<string>(PERMISSION_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
     if (!required) return true;
 
     const request = context.switchToHttp().getRequest();
@@ -19,6 +22,9 @@ export class PermissionsGuard implements CanActivate {
     if (!userId) throw new ForbiddenException('Not authenticated');
 
     const [resource, action] = required.split(':');
+    if (!resource || !action) {
+      throw new ForbiddenException(`Malformed permission: ${required}`);
+    }
     const match = await this.prisma.userRole.findFirst({
       where: {
         userId,
