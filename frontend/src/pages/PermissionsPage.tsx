@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiFetch } from '../lib/api';
+import { apiFetch, apiJson } from '../lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -13,8 +13,11 @@ export function PermissionsPage() {
   const [error, setError] = useState<string | null>(null);
 
   async function reload() {
-    const res = await apiFetch('/permissions');
-    setPermissions(await res.json());
+    try {
+      setPermissions(await apiJson<Permission[]>('/permissions'));
+    } catch {
+      window.location.href = '/login';
+    }
   }
 
   useEffect(() => {

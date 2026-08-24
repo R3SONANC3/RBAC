@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiFetch } from '../lib/api';
+import { apiFetch, apiJson } from '../lib/api';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -13,9 +13,15 @@ export function UsersPage() {
   const [editing, setEditing] = useState<User | null>(null);
 
   async function reload() {
-    const [usersRes, rolesRes] = await Promise.all([apiFetch('/users'), apiFetch('/roles')]);
-    setUsers(await usersRes.json());
-    setRoles(await rolesRes.json());
+    try {
+      const [users, roles] = await Promise.all([apiJson<User[]>('/users'), apiJson<Role[]>('/roles')]);
+      setUsers(users);
+      setRoles(roles);
+    } catch {
+      // Read failed and can't be recovered client-side (e.g. refresh token
+      // itself expired) — bounce to login rather than leaving a broken page.
+      window.location.href = '/login';
+    }
   }
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiFetch } from '../lib/api';
+import { apiJson } from '../lib/api';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -18,9 +18,11 @@ export function AuditLogPage() {
 
   useEffect(() => {
     const query = targetType ? `?targetType=${encodeURIComponent(targetType)}` : '';
-    void apiFetch(`/audit-log${query}`)
-      .then((res) => res.json())
-      .then(setLogs);
+    apiJson<AuditLog[]>(`/audit-log${query}`)
+      .then(setLogs)
+      .catch(() => {
+        window.location.href = '/login';
+      });
   }, [targetType]);
 
   return (

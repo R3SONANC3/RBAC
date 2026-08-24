@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiFetch } from '../lib/api';
+import { apiFetch, apiJson } from '../lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -15,9 +15,16 @@ export function RolesPage() {
   const [editing, setEditing] = useState<Role | null>(null);
 
   async function reload() {
-    const [rolesRes, permissionsRes] = await Promise.all([apiFetch('/roles'), apiFetch('/permissions')]);
-    setRoles(await rolesRes.json());
-    setPermissions(await permissionsRes.json());
+    try {
+      const [roles, permissions] = await Promise.all([
+        apiJson<Role[]>('/roles'),
+        apiJson<Permission[]>('/permissions'),
+      ]);
+      setRoles(roles);
+      setPermissions(permissions);
+    } catch {
+      window.location.href = '/login';
+    }
   }
 
   useEffect(() => {
