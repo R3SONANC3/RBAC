@@ -1,10 +1,12 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, UseGuards, UseInterceptors } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PermissionsGuard } from '../rbac/permissions.guard';
 import { RequirePermission } from '../rbac/require-permission.decorator';
 import { RolesService } from './roles.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
+import { Audit } from '../audit/audit.decorator';
+import { AuditInterceptor } from '../audit/audit.interceptor';
 
 @Controller('roles')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -40,12 +42,16 @@ export class RolesController {
 
   @Post(':id/permissions/:permissionId')
   @HttpCode(201)
+  @UseInterceptors(AuditInterceptor)
+  @Audit('permission:assign')
   assignPermission(@Param('id') id: string, @Param('permissionId') permissionId: string) {
     return this.roles.assignPermission(id, permissionId);
   }
 
   @Delete(':id/permissions/:permissionId')
   @HttpCode(204)
+  @UseInterceptors(AuditInterceptor)
+  @Audit('permission:remove')
   removePermission(@Param('id') id: string, @Param('permissionId') permissionId: string) {
     return this.roles.removePermission(id, permissionId);
   }

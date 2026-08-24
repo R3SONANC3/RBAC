@@ -7,6 +7,7 @@ import { RbacModule } from './rbac/rbac.module';
 import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permissions.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { PermissionsModule } from './permissions/permissions.module';
     UsersModule,
     RolesModule,
     PermissionsModule,
+    AuditModule,
   ],
   controllers: [AppController],
 })
