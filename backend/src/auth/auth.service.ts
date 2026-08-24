@@ -44,10 +44,18 @@ export class AuthService {
     if (!stored || stored.revokedAt || stored.expiresAt < new Date()) {
       throw new UnauthorizedException('Invalid refresh token');
     }
-    await this.prisma.refreshToken.update({
-      where: { id: stored.id },
+
+    // Conditional update is the atomicity guard: if two requests race on the
+    // same token, only one `revokedAt: null` row matches and gets revoked —
+    // the loser's count comes back 0 and is rejected instead of also minting
+    // a token pair.
+    const { count } = await this.prisma.refreshToken.updateMany({
+      where: { id: stored.id, revokedAt: null },
       data: { revokedAt: new Date() },
     });
+    if (count !== 1) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
 
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: stored.userId },

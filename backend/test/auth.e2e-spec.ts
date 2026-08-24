@@ -71,4 +71,18 @@ describe('Auth (e2e)', () => {
       .send({ email, password: 'wrong' });
     expect(res.status).toBe(401);
   });
+
+  it('rejects a non-string password with 400, not a 500 crash', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email, password: { a: 1 } });
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects a non-string refreshToken with 400, not a 500 crash', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .send({ refreshToken: 123 });
+    expect(res.status).toBe(400);
+  });
 });
