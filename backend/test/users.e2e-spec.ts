@@ -68,6 +68,30 @@ describe('Users (e2e)', () => {
     expect(remove.status).toBe(204);
   });
 
+  it('deletes a user via DELETE /users/:id while a role is still assigned (cascade-cleans UserRole)', async () => {
+    const email = `users-delete-${Date.now()}@example.com`;
+    await request(app.getHttpServer()).post('/auth/register').send({ email, password: 'SuperSecret123' });
+    const target = await prisma.user.findUniqueOrThrow({ where: { email } });
+    const role = await prisma.role.create({ data: { name: `role-delete-${Date.now()}` } });
+
+    const assign = await request(app.getHttpServer())
+      .post(`/users/${target.id}/roles/${role.id}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(assign.status).toBe(201);
+
+    const del = await request(app.getHttpServer())
+      .delete(`/users/${target.id}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(del.status).toBe(204);
+
+    const remainingUserRoles = await prisma.userRole.count({ where: { userId: target.id } });
+    expect(remainingUserRoles).toBe(0);
+    const deletedUser = await prisma.user.findUnique({ where: { id: target.id } });
+    expect(deletedUser).toBeNull();
+
+    await prisma.role.delete({ where: { id: role.id } });
+  });
+
   it('rejects a non-admin caller with 403', async () => {
     const email = `users-plain-${Date.now()}@example.com`;
     await request(app.getHttpServer()).post('/auth/register').send({ email, password: 'SuperSecret123' });
