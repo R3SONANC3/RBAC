@@ -4,6 +4,7 @@ import { LoginPage } from './pages/LoginPage';
 import { UsersPage } from './pages/UsersPage';
 import { RolesPage } from './pages/RolesPage';
 import { PermissionsPage } from './pages/PermissionsPage';
+import { AuditLogPage } from './pages/AuditLogPage';
 
 const Placeholder = ({ name }: { name: string }) => <div className="p-6">{name} page</div>;
 
@@ -16,7 +17,7 @@ export const router = createBrowserRouter([
       { path: '/users', element: <UsersPage /> },
       { path: '/roles', element: <RolesPage /> },
       { path: '/permissions', element: <PermissionsPage /> },
-      { path: '/audit-log', element: <Placeholder name="Audit Log" /> },
+      { path: '/audit-log', element: <AuditLogPage /> },
     ],
   },
 ]);
